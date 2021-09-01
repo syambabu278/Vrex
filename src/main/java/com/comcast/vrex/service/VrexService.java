@@ -21,16 +21,25 @@ import com.comcast.vrex.model.CommandsResponse;
 @Service
 public class VrexService {
 	private static final Log LOGGER = LogFactory.getLog(VrexService.class);
-
-	public Map<String, Object> processCommands(Map<String, List<Command>> request) {		
-		// Merge Duplicate States with same name
-		
-		Map<String, List<Command>> updatedrequest = new HashMap<String, List<Command>>();
+	public static Map<String, List<Command>> aggregateRequest = new HashMap<>();
+	public Map<String, Object> processCommands(Map<String, List<Command>> request) {
+		//Keeps aggregate data of multiple requests
 		for (Map.Entry<String, List<Command>> entry : request.entrySet()) {
+			if(aggregateRequest.containsKey(entry.getKey())) {			
+			aggregateRequest.get(entry.getKey()).addAll(entry.getValue());
+			} else 
+				aggregateRequest.put(entry.getKey(), entry.getValue());
+		}
+		
+		LOGGER.info("aggrigateRequest Size"+aggregateRequest.size());
+		// Merge Duplicate States with same name
+				Map<String, List<Command>> updatedrequest = new HashMap<String, List<Command>>();
+		for (Map.Entry<String, List<Command>> entry : aggregateRequest.entrySet()) {
 			if (updatedrequest.containsKey(entry.getKey().toLowerCase())) {
 				updatedrequest.get(entry.getKey().toLowerCase()).addAll(entry.getValue());
 			} else
 				updatedrequest.put(entry.getKey().toLowerCase(), entry.getValue());
+			LOGGER.info("Satewise comand count->"+entry.getKey().toLowerCase()+":"+updatedrequest.get(entry.getKey().toLowerCase()).size());
 		}
 
 		
